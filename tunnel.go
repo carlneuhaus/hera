@@ -24,6 +24,7 @@ type TunnelConfig struct {
 	IP       string
 	Hostname string
 	Port     string
+	Protocol string
 }
 
 // NewTunnel returns a Tunnel with its corresponding config and certificate
@@ -145,13 +146,14 @@ func (t *Tunnel) startService() error {
 func (t *Tunnel) writeConfigFile() error {
 	configLines := []string{
 		"hostname: %s",
-		"url: %s:%s",
+		"url: %s://%s:%s",
 		"logfile: %s",
 		"origincert: %s",
 		"no-autoupdate: true",
+		"no-tls-verify: true",
 	}
 
-	contents := fmt.Sprintf(strings.Join(configLines[:], "\n"), t.Config.Hostname, t.Config.IP, t.Config.Port, t.Service.LogFilePath(), t.Certificate.FullPath())
+	contents := fmt.Sprintf(strings.Join(configLines[:], "\n"), t.Config.Hostname, t.Config.Protocol, t.Config.IP, t.Config.Port, t.Service.LogFilePath(), t.Certificate.FullPath())
 
 	err := afero.WriteFile(fs, t.Service.ConfigFilePath(), []byte(contents), 0644)
 	if err != nil {

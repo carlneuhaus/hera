@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"golang.org/x/net/publicsuffix"
 	"net"
 	"time"
+
+	"golang.org/x/net/publicsuffix"
 
 	"github.com/spf13/afero"
 
@@ -15,6 +16,8 @@ import (
 const (
 	heraHostname = "hera.hostname"
 	heraPort     = "hera.port"
+	heraIP       = "hera.ip"
+	heraProtocol = "hera.protocol"
 )
 
 // A Handler is responsible for responding to container start and die events
@@ -73,6 +76,8 @@ func (h *Handler) handleStartEvent(event events.Message) error {
 
 	hostname := getLabel(heraHostname, container)
 	port := getLabel(heraPort, container)
+	supplied_ip := getLabel(heraIP, container)
+	protocol := getLabel(heraProtocol, container)
 	if hostname == "" || port == "" {
 		return nil
 	}
@@ -84,6 +89,16 @@ func (h *Handler) handleStartEvent(event events.Message) error {
 		return err
 	}
 
+	// Check if an IP was supplied as label
+	if supplied_ip != "" {
+		ip = supplied_ip
+	}
+
+	// Check if a protocol was supplied as label
+	if protocol == "" {
+		protocol = "http"
+	}
+
 	cert, err := getCertificate(hostname)
 	if err != nil {
 		return err
@@ -93,6 +108,7 @@ func (h *Handler) handleStartEvent(event events.Message) error {
 		IP:       ip,
 		Hostname: hostname,
 		Port:     port,
+		Protocol: protocol,
 	}
 
 	tunnel := NewTunnel(config, cert)
